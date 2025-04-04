@@ -12,12 +12,17 @@
 
 
 const Sequelize = require('sequelize');
-const sequelize = new Sequelize('neondb', 'neondb_owner', 'npg_7O3apjmoGEMT', {
-    host: 'ep-restless-lab-a4qqytcv-pooler.us-east-1.aws.neon.tech',
+
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
+  {
+    host: process.env.DB_HOST,
     dialect: 'postgres',
     port: 5432,
     dialectOptions: {
-        ssl: { rejectUnauthorized: false }
+      ssl: { rejectUnauthorized: false }
     },
     query: { raw: true },
     logging: false  //disabling the terminal sql output
