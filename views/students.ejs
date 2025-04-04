@@ -1,43 +1,37 @@
 <div class="table-responsive">
-    <table class="table">
+  <h2>Students</h2>
+  <a href="/students/add" class="btn btn-success float-right mb-3">Add New Student</a>
+
+  <% if (students && students.length > 0) { %>
+  <table class="table">
       <thead>
-        <tr>
-          <th>Student Num</th>
-          <th>Full Name</th>
-          <th>Email</th>
-          <th>Address</th>
-          <th>Status</th>
-          <th>Course ID</th>
-        </tr>
+          <tr>
+              <th>Student Num</th>
+              <th>Full Name</th>
+              <th>Email</th>
+              <th>Address</th>
+              <th>Status</th>
+              <th>Course ID</th>
+              <th></th> 
+          </tr>
       </thead>
       <tbody>
-        <% students.forEach(function(student) { %>
-        <tr>
-          <td><%= student.studentNum %></td>
-          <td>
-            <a href="/student/<%= student.studentNum %>"
-              ><%= student.firstName %> <%= student.lastName %></a
-            >
-          </td>
-          <td><a href="mailto:<%= student.email %>"><%= student.email %></a></td>
-          <td>
-            <%= student.addressStreet %>, <%= student.addressCity %>, <%=
-            student.addressProvince %>
-          </td>
-          <td><%= student.status %></td>
-          <td>
-            <a href="/students?course=<%= student.course %>"
-              ><%= student.course %></a
-            >
-          </td>
-        </tr>
-        <% }); %>
+          <% students.forEach(function(student) { %>
+          <tr>
+              <td><a href="/student/<%= student.studentNum %>"><%= student.studentNum %></a></td>
+              <td><%= student.firstName %> <%= student.lastName %></td>
+              <td><%= student.email %></td>
+              <td><%= student.addressStreet %>, <%= student.addressCity %>, <%= student.addressProvince %></td>
+              <td><%= student.status %></td>
+              <td><%= student.course %></td>
+              <td>
+                  <a href="/student/delete/<%= student.studentNum %>" class="btn btn-danger">Remove</a>
+              </td>
+          </tr>
+          <% }) %>
       </tbody>
-    </table>
-  </div>
-  
-  <% if (!students.length) { %>
-  <div class="col-md-12 text-center">
-    <strong>{{ message }}</strong>
-  </div>
+  </table>
+  <% } else { %>
+  <div class="alert alert-warning">No results</div>
   <% } %>
+</div>

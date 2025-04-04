@@ -1,208 +1,110 @@
 /*********************************************************************************
-*  WEB700 – Assignment 05
+*  WEB700 – Assignment 06
 *  I declare that this assignment is my own work in accordance with Seneca Academic Policy. No part 
 *  of this assignment has been copied manually or electronically from any other source 
 *  (including 3rd party web sites) or distributed to other students.
 * 
 *  Name: Varsha Maria Alex
 *  Student ID: 180085235
-*  Date: 26-03-2025
+*  Date: 04-04-2025
 *
 ********************************************************************************/ 
-const fs = require("fs");
-const path = require("path");
 
-class Data {
-    constructor(students, courses) {
-        this.students = students;
-        this.courses = courses;
-    }
-}
 
-let dataInfo = null;
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize('neondb', 'neondb_owner', 'npg_7O3apjmoGEMT', {
+    host: 'ep-restless-lab-a4qqytcv-pooler.us-east-1.aws.neon.tech',
+    dialect: 'postgres',
+    port: 5432,
+    dialectOptions: {
+        ssl: { rejectUnauthorized: false }
+    },
+    query: { raw: true },
+    logging: false  //disabling the terminal sql output
+});
 
-module.exports.initialize = function () {
-    return new Promise((resolve, reject) => {
-        const courseFilePath = path.join(__dirname, "../data/courses.json");
-        const studentFilePath = path.join(__dirname, "../data/students.json");
+// Define Models
+const Student = sequelize.define("Student", {
+    studentNum: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
+    firstName: Sequelize.STRING,
+    lastName: Sequelize.STRING,
+    email: Sequelize.STRING,
+    addressStreet: Sequelize.STRING,
+    addressCity: Sequelize.STRING,
+    addressProvince: Sequelize.STRING,
+    TA: Sequelize.BOOLEAN,
+    status: Sequelize.STRING
+});
 
-        fs.readFile(courseFilePath, 'utf8', (err, courseData) => {
-            if (err) {
-                reject("Unable to load courses: " + err);
-                return;
-            }
+const Course = sequelize.define("Course", {
+    courseId: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
+    courseCode: Sequelize.STRING,
+    courseDescription: Sequelize.STRING
+});
 
-            fs.readFile(studentFilePath, 'utf8', (err, studentData) => {
-                if (err) {
-                    reject("Unable to load students: " + err);
-                    return;
-                }
+Course.hasMany(Student, { foreignKey: 'course' });
 
-                dataInfo = new Data(JSON.parse(studentData), JSON.parse(courseData));
-                resolve();
-            });
-        });
-    });
+// Exported Functions
+module.exports.initialize = () => {
+    return sequelize.sync();
 };
 
-module.exports.getAllStudents = function () {
-    return new Promise((resolve, reject) => {
-        if (!dataInfo || dataInfo.students.length === 0) {
-            reject("No results available");
-            return;
-        }
-        resolve(dataInfo.students);
-    });
+module.exports.getAllStudents = () => {
+    return Student.findAll();
 };
 
-module.exports.getCourses = function () {
-    return new Promise((resolve, reject) => {
-        if (!dataInfo || dataInfo.courses.length === 0) {
-            reject("No results available");
-            return;
-        }
-        resolve(dataInfo.courses);
-    });
+module.exports.getStudentsByCourse = (course) => {
+    return Student.findAll({ where: { course: course } });
 };
 
-module.exports.getStudentByNum = function (num) {
-    return new Promise(function (resolve, reject) {
-      var foundStudent = null;
-  
-      for (let i = 0; i < dataInfo.students.length; i++) {
-        if (dataInfo.students[i].studentNum == num) {
-          foundStudent = dataInfo.students[i];
-        }
-      }
-  
-      if (!foundStudent) {
-        reject("query returned 0 results");
-        return;
-      }
-  
-      resolve(foundStudent);
-    });
-  };
-
-  module.exports.getStudentsByCourse = function (course) {
-    return new Promise(function (resolve, reject) {
-      var filteredStudents = [];
-  
-      for (let i = 0; i < dataInfo.students.length; i++) {
-        if (dataInfo.students[i].course == course) {
-          filteredStudents.push(dataInfo.students[i]);
-        }
-      }
-  
-      if (filteredStudents.length == 0) {
-        reject("query returned 0 results");
-        return;
-      }
-  
-      resolve(filteredStudents);
-    });
-  };
-  
-
-module.exports.addStudent = function (studentData) {
-    return new Promise((resolve, reject) => {
-        if (!dataInfo) {
-            reject("Data not initialized");
-            return;
-        }
-
-        studentData.TA = studentData.TA ? true : false;
-        studentData.studentNum = dataInfo.students.length + 1;
-        studentData.course = parseInt(studentData.course);
-
-        const orderedStudent = {
-            studentNum: studentData.studentNum,
-            firstName: studentData.firstName,
-            lastName: studentData.lastName,
-            email: studentData.email,
-            addressStreet: studentData.addressStreet,
-            addressCity: studentData.addressCity,
-            addressProvince: studentData.addressProvince,
-            TA: studentData.TA,
-            status: studentData.status,
-            course: studentData.course
-        };
-
-        dataInfo.students.push(orderedStudent);
-            // Correct file path: Moves up one level from modules/ to project root, then into data/
-    const filePath = path.join(__dirname, "../data/students.json");
-
-    // Write updated students array to the file
-    fs.writeFile(
-      filePath,
-      JSON.stringify(dataInfo.students, null, 4),
-      "utf8",
-      (err) => {
-        if (err) {
-          reject("Unable to write to students.json: " + err);
-        } else {
-          resolve();
-        }
-      }
-    );
-  });
+module.exports.getStudentByNum = (num) => {
+    return Student.findAll({ where: { studentNum: num } })
+        .then(data => data.length > 0 ? data[0] : null);
 };
 
-module.exports.getCourseById = function (id) {
-  return new Promise(function (resolve, reject) {
-    var foundCourse = null;
-
-    for (let i = 0; i < dataInfo.courses.length; i++) {
-      if (dataInfo.courses[i].courseId == id) {
-        foundCourse = dataInfo.courses[i];
-      }
-    }
-
-    if (!foundCourse) {
-      reject("query returned 0 results");
-      return;
-    }
-
-    resolve(foundCourse);
-  });
+module.exports.getCourses = () => {
+    return Course.findAll();
 };
 
-module.exports.updateStudent = function (studentData) {
-  return new Promise((resolve, reject) => {
-    if (!dataInfo) {
-      reject("Data not initialized");
-      return;
+module.exports.getCourseById = (id) => {
+    return Course.findAll({ where: { courseId: id } })
+        .then(data => data.length > 0 ? data[0] : null);
+};
+
+module.exports.addStudent = (studentData) => {
+    studentData.TA = studentData.TA ? true : false;
+    for (let prop in studentData) {
+        if (studentData[prop] === "") studentData[prop] = null;
     }
+    return Student.create(studentData);
+};
 
-    let found = false;
-
-    for (let i = 0; i < dataInfo.students.length; i++) {
-      if (dataInfo.students[i].studentNum == studentData.studentNum) {
-        studentData.TA = studentData.TA ? true : false;
-        dataInfo.students[i] = studentData;
-        found = true;
-        break;
-      }
+module.exports.updateStudent = (studentData) => {
+    studentData.TA = studentData.TA ? true : false;
+    for (let prop in studentData) {
+        if (studentData[prop] === "") studentData[prop] = null;
     }
+    return Student.update(studentData, { where: { studentNum: studentData.studentNum } });
+};
 
-    if (!found) {
-      reject("Student not found");
-      return;
+module.exports.addCourse = (courseData) => {
+    for (let prop in courseData) {
+        if (courseData[prop] === "") courseData[prop] = null;
     }
+    return Course.create(courseData);
+};
 
-    const filePath = path.join(__dirname, "../data/students.json");
+module.exports.updateCourse = (courseData) => {
+    for (let prop in courseData) {
+        if (courseData[prop] === "") courseData[prop] = null;
+    }
+    return Course.update(courseData, { where: { courseId: courseData.courseId } });
+};
 
-    fs.writeFile(
-      filePath,
-      JSON.stringify(dataInfo.students, null, 4),
-      "utf8",
-      (err) => {
-        if (err) {
-          reject("Unable to write to students.json: " + err);
-        } else {
-          resolve();
-        }
-      }
-    );
-    });
+module.exports.deleteCourseById = (id) => {
+    return Course.destroy({ where: { courseId: id } });
+};
+
+module.exports.deleteStudentByNum = (studentNum) => {
+    return Student.destroy({ where: { studentNum: studentNum } });
 };
